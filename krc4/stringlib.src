@@ -1,0 +1,159 @@
+&ACCESS RV2
+&REL 0
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF stringlib()
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmail.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library provides a set of functions for managing strings
+
+    ;  ;USAGE EXAMPLE
+    ;  ;ret=fclose_all()
+    ;  IF fopen("numbers.txt", "r", handle) THEN
+    ;      repeat
+    ;         ;read from a file an int number terminating with \n
+    ;         ret = fscanf_int(handle, "'H0D'", res)
+    ;         msgint("value:", res)
+    ;         ret = feof(handle, bfeof)
+    ;      until bfeof
+    ;  ENDIF
+    ;  ret = fclose(handle)
+END
+
+global DEFFCT CHAR[256] PTOS(POINT:IN)
+   DECL E6POS POINT
+   return SPRINTF("{X %s, Y %s, Z %s, A %s, B %s, C %s}", FTOS(POINT.x), FTOS(POINT.y), FTOS(POINT.z), FTOS(POINT.a), FTOS(POINT.b), FTOS(POINT.c))
+ENDFCT
+
+global DEF MID( STRING[]:IN, OFFSET:IN, LENGTH:IN, OUTPUT_STRING[]:OUT )
+    DECL CHAR STRING[]
+    DECL INT OFFSET
+    DECL INT LENGTH
+    CHAR OUTPUT_STRING[]
+    INT INDEX_OUTPUT
+    BOOL RET
+    INDEX_OUTPUT = 1
+    RET = STRCLEAR(OUTPUT_STRING[])
+    FOR INDEX_OUTPUT=1 TO LENGTH
+        OUTPUT_STRING[INDEX_OUTPUT] = STRING[OFFSET + INDEX_OUTPUT]
+    ENDFOR
+    OUTPUT_STRING[INDEX_OUTPUT] = 0
+END
+
+global DEFFCT REAL STOF( STRING[]:IN )
+    DECL CHAR STRING[]
+    INT OFFSET
+    REAL VALUE
+    DECL STATE_T STAT
+    OFFSET = 0
+    VALUE = 0.0
+    ;ON_ERROR_PROCEED 
+    SREAD(STRING[], STAT, OFFSET, "%f", VALUE)
+    ;IF ($ERR.Number<>0) THEN
+       ;ERR_CLEAR($ERR)
+    ;ELSE
+       ;ERR_RAISE($ERR)
+    ;ENDIF
+    return VALUE
+ENDFCT
+
+global DEFFCT INT STOI( STRING[]:IN )
+    DECL CHAR STRING[]
+    INT VALUE
+    DECL STATE_T STAT
+    INT OFFSET
+    OFFSET=0
+    VALUE = 0
+    ON_ERROR_PROCEED
+    SREAD(STRING[], STAT, OFFSET, "%d", VALUE)
+    IF ($ERR.Number<>0) THEN
+       ERR_CLEAR($ERR)
+    ELSE
+       ERR_RAISE($ERR)
+    ENDIF
+    return VALUE
+ENDFCT
+
+;converts a floating point value to string
+global DEFFCT CHAR[128] FTOS( VALUE:IN )
+    DECL REAL VALUE
+    CHAR RESSTRING[128]
+    DECL STATE_T STAT
+    INT OFFSET
+    bool res
+    res = StrClear(RESSTRING[])
+    OFFSET=0
+    ON_ERROR_PROCEED
+    SWRITE (RESSTRING[], STAT, OFFSET, "%f", VALUE)
+    IF ($ERR.Number<>0) THEN
+       ERR_CLEAR($ERR)
+    ELSE
+       ERR_RAISE($ERR)
+    ENDIF
+    return RESSTRING[]
+ENDFCT
+
+;converts an int to string
+global DEFFCT CHAR[128] ITOS( VALUE:IN )
+    DECL INT VALUE
+    CHAR RESSTRING[128]
+    DECL STATE_T STAT
+    INT OFFSET
+    bool res
+    res = StrClear(RESSTRING[])
+    OFFSET=0
+    ON_ERROR_PROCEED
+    SWRITE (RESSTRING[], STAT, OFFSET, "%d", VALUE)
+    IF ($ERR.Number<>0) THEN
+       ERR_CLEAR($ERR)
+    ELSE
+       ERR_RAISE($ERR)
+    ENDIF
+    return RESSTRING[]
+ENDFCT
+
+;converts a bool to string
+global DEFFCT CHAR[128] BTOS( VALUE:IN )
+    DECL BOOL VALUE
+    CHAR RESSTRING[128]
+    DECL STATE_T STAT
+    INT OFFSET
+    bool res
+    res = StrClear(RESSTRING[])
+    OFFSET=0
+    ON_ERROR_PROCEED
+    SWRITE (RESSTRING[], STAT, OFFSET, "%d", VALUE)
+    IF ($ERR.Number<>0) THEN
+       ERR_CLEAR($ERR)
+    ELSE
+       ERR_RAISE($ERR)
+    ENDIF
+    return RESSTRING[]
+ENDFCT
+
+global DEFFCT CHAR[256] SPRINTF( FORMAT:IN, PARAM1:IN, PARAM2:IN, PARAM3:IN, PARAM4:IN, PARAM5:IN, PARAM6:IN, PARAM7:IN )
+    DECL CHAR FORMAT[]
+    DECL CHAR PARAM1[]
+    DECL CHAR PARAM2[]
+    DECL CHAR PARAM3[]
+    DECL CHAR PARAM4[]
+    DECL CHAR PARAM5[]
+    DECL CHAR PARAM6[]
+    DECL CHAR PARAM7[]
+    CHAR RESSTRING[256]
+    DECL STATE_T STAT
+    INT OFFSET
+    OFFSET=0
+    ON_ERROR_PROCEED
+    SWRITE (RESSTRING[], STAT, OFFSET, FORMAT[], PARAM1[], PARAM2[], PARAM3[], PARAM4[], PARAM5[], PARAM6[], PARAM7[])
+    IF ($ERR.Number<>0) THEN
+       ERR_CLEAR($ERR)
+    ELSE
+       ERR_RAISE($ERR)
+    ENDIF
+    return RESSTRING[]
+ENDFCT
+

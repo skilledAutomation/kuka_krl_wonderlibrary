@@ -1,0 +1,12 @@
+&ACCESS RV2
+&REL 0
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEFDAT stringlib
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmail.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library provides a set of functions for managing strings
+ENDDAT

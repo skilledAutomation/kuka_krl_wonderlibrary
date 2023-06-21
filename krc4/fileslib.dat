@@ -1,0 +1,18 @@
+&ACCESS RVO2
+&REL 0
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM DISKPATH = KRC:\R1\System
+DEFDAT  FILESLIB PUBLIC
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmail.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library provides a set of functions for managing files
+
+    GLOBAL INT fileslib_LOG_LEVEL=0 ;0-no log, 1-log error, 2-log debug
+    GLOBAL INT fileslib_LOG_ERROR=1
+    GLOBAL INT fileslib_LOG_DEBUG=2
+
+ENDDAT

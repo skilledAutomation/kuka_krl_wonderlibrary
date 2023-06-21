@@ -1,0 +1,565 @@
+&ACCESS RVO2
+&REL 0
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM DISKPATH = KRC:\R1\System
+DEF fileslib()
+    BOOL res
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmail.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library provides a set of functions for managing files
+
+    ;  ;USAGE EXAMPLE
+    ;  ;ret=fclose_all()
+    ;  IF fopen("numbers.txt", "r", handle) THEN
+    ;      repeat
+    ;         ;read from a file an int number terminating with \n
+    ;         ret = fscanf_int(handle, "'H0D'", res)
+    ;         msgint("value:", res)
+    ;         ret = feof(handle, bfeof)
+    ;      until bfeof
+    ;  ENDIF
+    ;  ret = fclose(handle)
+    res = fclose_all()
+    
+END
+
+DEFFCT BOOL fileCheckResultCode(STAT:IN)
+    DECL STATE_T STAT
+    INT RESULT_CODE
+    RESULT_CODE = STAT.MSG_NO
+    IF (NOT ((STAT.RET1==#CMD_ABORT) OR (STAT.RET1==#FMT_ERR) OR (STAT.RET1==#CMD_TIMEOUT))) THEN
+    ;not valid if IF (STAT.RET1==#CMD_OK) THEN
+        RETURN TRUE
+    ENDIF
+    
+    IF (RESULT_CODE==-1) THEN
+        MSG("Internal error")
+    ENDIF
+    
+    IF (RESULT_CODE==-2) THEN
+        MSG("Operation failed")
+    ENDIF
+    
+    IF (RESULT_CODE==-3) THEN
+        MSG("There is no file open")
+    ENDIF
+    
+    IF (RESULT_CODE==-4) THEN
+        MSG("End of file has been reached")
+    ENDIF
+    
+    IF (RESULT_CODE==-6) THEN
+        MSG("File already open")
+    ENDIF    
+    
+    IF (RESULT_CODE==-8) THEN
+        MSG("File system not available: error in specification of targhet directory")
+    ENDIF
+    
+    IF (RESULT_CODE==-10) THEN
+        MSG("Invalid number of function parameters transferred")
+    ENDIF
+    
+    IF (RESULT_CODE==-11) THEN
+        MSG("At least one function parameter has an invalid value")
+    ENDIF
+    
+    IF (RESULT_CODE==-12) THEN
+        MSG("At least one function parameter has an incorrect data type")
+    ENDIF
+    
+    IF (RESULT_CODE==-13) THEN
+        MSG("At least one function parameter is not a variable although a variable is expected")
+    ENDIF
+    
+    IF (RESULT_CODE==-14) THEN
+        MSG("At least one function parameter string is blank")
+    ENDIF
+    
+    IF (RESULT_CODE==-15) THEN
+        MSG("At least one function parameter string is too long")
+    ENDIF
+    
+    IF (RESULT_CODE==-16) THEN
+        MSG("At least one function parameter string contains invalid characters, e.g. \ * ? '"' < > : , = ; ] [ ) ( } {, for paths, etc.")
+    ENDIF
+    
+    IF (RESULT_CODE==-30) THEN
+        MSG("Direct access to the ROBOTER directory is not permissible")
+    ENDIF
+    
+    IF (RESULT_CODE==-31) THEN
+        MSG("Invalid absolute path")
+    ENDIF
+    
+    IF (RESULT_CODE==-32) THEN
+        MSG("Mount point not found")
+    ENDIF
+    
+    IF (RESULT_CODE==-40) THEN
+        MSG("File cannot be opened because 11 files are already open.")
+    ENDIF
+    
+    IF (RESULT_CODE==-41) THEN
+        MSG("One value could not be read. The values before this value were read correctly")
+    ENDIF
+    
+    IF (RESULT_CODE==-42) THEN
+        MSG("The format string contains an invalid format statement")
+    ENDIF
+    
+    IF (RESULT_CODE==-43) THEN
+        MSG("The number of values to be read in the format string does not correspond to the number of transferred parameters")
+    ENDIF
+    
+    IF (RESULT_CODE==-44) THEN
+        MSG("An invalid format wad specified for one parameter")
+    ENDIF
+    
+    return FALSE
+ENDFCT
+
+global DEFFCT BOOL feof( HANDLE:IN, bEOF:OUT )
+    INT HANDLE
+    BOOL bEOF
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    bEOF = FALSE
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_feof", HANDLE, bEOF)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+;returns true if ok
+global DEFFCT BOOL fgetc( HANDLE:IN, character:OUT )
+    INT HANDLE
+    CHAR character
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fgetc", HANDLE, character)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+;returns true if ok
+; reads characters from file up to the separator characters (optional parameter) or a newline,
+; otherwise up to the bufferSize
+; perform buffer initialization before usage
+; for index=1 to 1024
+;   buffer[index] = 0
+; endfor   
+global DEFFCT BOOL fgets( HANDLE:IN, buffer:OUT, bufferSize:IN, readCharNum:OUT, SEPARATOR:IN )
+    INT HANDLE
+    CHAR buffer[]
+    INT bufferSize
+    INT readCharNum
+    CHAR separator
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    IF VARSTATE ("SEPARATOR") == #INITIALIZED THEN
+        CWRITE($FCT_CALL, STAT, MODUS, "krl_fgets", HANDLE, buffer[], bufferSize, readCharNum, separator)
+    ELSE
+        CWRITE($FCT_CALL, STAT, MODUS, "krl_fgets", HANDLE, buffer[], bufferSize, readCharNum)
+    ENDIF
+    
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+;reads an integer number from file terminating with SEPARATOR
+; es. fscanf_int(myfileHandle, 13, myIntVar);"'H0D'"
+global DEFFCT BOOL fscanf_int( HANDLE:IN, SEPARATOR:IN, VAR:OUT )
+    INT HANDLE
+    CHAR SEPARATOR
+    INT VAR
+    CHAR FORMAT[4]
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    FORMAT[] = "%d"
+    FORMAT[3] = SEPARATOR
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fscanf", HANDLE, FORMAT[], VAR)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+;reads a floating point number from file terminating with SEPARATOR
+; es. fscanf_real(myfileHandle, 13, myIntVar);"'H0D'"
+global DEFFCT BOOL fscanf_real( HANDLE:IN, SEPARATOR:IN, VAR:OUT )
+    INT HANDLE
+    CHAR SEPARATOR
+    REAL VAR
+    CHAR FORMAT[4]
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    VAR = 0.0
+    FORMAT[] = "%f"
+    FORMAT[3] = SEPARATOR
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fscanf", HANDLE, FORMAT[], VAR)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+global DEFFCT BOOL fprint( HANDLE:IN, STRING[]:IN )
+    INT HANDLE
+    CHAR STRING[]
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    INT retry
+    MODUS=#SYNC
+    retry = 0
+    for retry=0 to 3
+        CWRITE($FCT_CALL, STAT, MODUS, "krl_fprintf", HANDLE, "%s", STRING[] )
+        if fileCheckResultCode(STAT) then
+            return true
+        endif
+    endfor
+    return false;fileCheckResultCode(STAT)
+ENDFCT
+
+;with newline and carriege return
+global DEFFCT BOOL fprintf( HANDLE:IN, STRING[]:IN )
+    INT HANDLE
+    CHAR STRING[]
+    return fprint(HANDLE, SPRINTF("%s'H0D''H0A'", STRING[]))
+ENDFCT
+
+;returns true if ok
+global DEFFCT BOOL fopen( FILENAME:IN, MODE:IN, HANDLE:OUT ) ;mode can be "a", "w"
+    CHAR FILENAME[]
+    CHAR MODE[]
+    INT HANDLE
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    HANDLE = 0
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fopen", FILENAME[], MODE[], HANDLE)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+;returns true if ok
+global DEFFCT BOOL fclose( HANDLE:IN )
+    INT HANDLE
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fclose", HANDLE)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+;All files that have been opened by the interpreter specified here using krl_open() are closed.
+; 0: Closes all files that have been opened by the submit interpreter.
+;* 1: Closes all files that have been opened by the robot interpreter.
+;* -1: Closes all files that have been opened by the interpreter currently calling krl_fclose_all().
+;* -99: Closes all files that have been opened, regardless of the interpreter.
+global DEFFCT BOOL fclose_all(INTERPRETER:IN)
+    INT INTERPRETER
+    INT _INTERPRETER
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    MODUS=#SYNC
+    _INTERPRETER = -99
+    IF VARSTATE ("INTERPRETER") == #INITIALIZED THEN
+        _INTERPRETER = INTERPRETER
+    ENDIF
+    
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fclose_all", _INTERPRETER)
+    return fileCheckResultCode(STAT)
+ENDFCT
+
+global DEF WRITE_FILE( FILENAME:IN, STRINGA:IN, MODE:IN ) ;modo puo' essere ["a", "w"]
+    DECL CHAR FILENAME[] ;[30]
+    DECL CHAR STRINGA[]
+    DECL CHAR MODE[]
+    DECL STATE_T STAT
+    DECL MODUS_T MODUS
+    INT HANDLE
+    MODUS=#SYNC
+    HANDLE = 0
+    CWRITE($FCT_CALL, STAT, MODUS, "krl_fopen", FILENAME[], MODE[], HANDLE)
+    IF (STAT.RET1==#CMD_ABORT) THEN
+        ;CheckError$FCT_CALL(STAT.MSG_NO,3)
+    ELSE
+        CWRITE($FCT_CALL, STAT, MODUS, "krl_fprintf", HANDLE, "%s 'H0D''H0A'", STRINGA[] )
+        IF (STAT.RET1==#CMD_ABORT) THEN
+            ;CheckError$FCT_CALL(STAT.MSG_NO,4)
+        ENDIF
+        
+        CWRITE($FCT_CALL, STAT, MODUS, "krl_fclose", HANDLE)
+        IF (STAT.RET1==#CMD_ABORT) THEN
+            ;CheckError$FCT_CALL(STAT.MSG_NO,5)
+        ELSE
+            ;HANDLE=0
+        ENDIF
+        
+    ENDIF
+    
+END
+
+;THE LOG FILE GETS CREATED AUTOMATICALLY IN THE FOLDER C:/KRC/ROBOTER/UserFiles/
+global DEF LOG( STRINGA:IN )
+    DECL CHAR STRINGA[]
+    CHAR sDate[30]
+    CHAR FILENAME[30]
+    DECL STATE_T STAT
+    INT OFFSET
+    DECL MODUS_T MODE
+    INT HANDLE
+    BOOL res
+    
+    if fileslib_LOG_LEVEL < 1 then
+       return
+    endif
+    
+    MODE=#SYNC
+    OFFSET=0
+    HANDLE = 0
+    SWRITE (sDate[], STAT, OFFSET, "%d.%d.%d %d:%d:%d.%d", $DATE.YEAR, $DATE.MONTH, $DATE.DAY, $DATE.HOUR, $DATE.MIN, $DATE.SEC, $DATE.CSEC)
+    OFFSET=0
+    SWRITE (FILENAME[], STAT, OFFSET, "%d%.2d%.2d%s", $DATE.YEAR, $DATE.MONTH, $DATE.DAY, "file.log")
+    res = fileCheckResultCode(STAT)
+    ;CWRITE($FCT_CALL, STAT, MODE, "krl_fopen", FILENAME[], "a", HANDLE)
+    IF fopen( FILENAME[], "a", HANDLE ) THEN
+        CWRITE($FCT_CALL, STAT, MODE, "krl_fprintf", HANDLE, "%s %s 'H0D''H0A'", sDate[], STRINGA[] )
+        res = fileCheckResultCode(STAT)
+        res = fclose(HANDLE)
+    ENDIF
+    
+END
+
+global DEF LOGERROR(STRINGA:IN)
+    DECL CHAR STRINGA[]
+    if fileslib_LOG_LEVEL < fileslib_LOG_ERROR then
+        return
+    endif
+    LOG(STRINGA[])
+END
+
+global DEF LOGDEBUG(STRINGA:IN)
+    DECL CHAR STRINGA[]
+    if fileslib_LOG_LEVEL < fileslib_LOG_DEBUG then
+        return
+    endif
+    LOG(STRINGA[])
+END
+
+;;creates an svg and appends the header
+;global DEF writeSvgHeader(filename[]:IN, viewXmin:IN, viewWidth:IN, viewYmin:IN, viewHeight:IN)
+;    DECL CHAR FILENAME[]
+;    DECL INT viewXmin, viewWidth, viewYmin, viewHeight
+;    BOOL ret
+;    
+;    INT index
+;    INT HANDLE
+;    
+;    IF fopen(filename[], "w", HANDLE) THEN
+;        
+;        ret = fprintf(HANDLE, "<?xml version='"'1.0'"' encoding='"'UTF-8'"' standalone='"'no'"'?>")
+;        ret = fprintf(HANDLE, "<svg xmlns:dc='"'http://purl.org/dc/elements/1.1/'"' ") 
+;        ret = fprintf(HANDLE, "xmlns:cc='"'http://creativecommons.org/ns#'"' ")
+;        ret = fprintf(HANDLE, "xmlns:rdf='"'http://www.w3.org/1999/02/22-rdf-syntax-ns#'"' ")
+;        ret = fprintf(HANDLE, "xmlns:svg='"'http://www.w3.org/2000/svg'"' ")
+;        ret = fprintf(HANDLE, "xmlns='"'http://www.w3.org/2000/svg'"' id='"'svg8'"' version='"'1.1'"' ")
+;        ret = fprintf(HANDLE, SPRINTF("viewBox='"'%s %s %s %s'"' width='"'%smm'"' height='"'%smm'"'>",ITOS(viewXmin), ITOS(viewYmin), ITOS(viewWidth), ITOS(viewHeight), ITOS(viewWidth), ITOS(viewHeight)))
+;        ret = fprintf(HANDLE, "<g id='"'layer1'"'>")        
+;        
+;        ret = fclose(HANDLE)
+;        
+;    ENDIF
+;END
+;
+;;appends the svg footer
+;global DEF writeSvgFooter(filename[]:IN)
+;    DECL CHAR FILENAME[]
+;    BOOL ret
+;    
+;    INT HANDLE
+;    
+;    IF fopen(filename[], "a", HANDLE) THEN
+;        ret = fprintf(HANDLE, "</g>")
+;        ret = fprintf(HANDLE, "</svg>")      
+;        
+;        ret = fclose(HANDLE)    
+;    ENDIF
+;END
+;
+;global DEF writeSvgPoint(filename[]:IN, POINT:OUT, COLOR[]:IN, SIZE:IN)
+;    DECL CHAR FILENAME[]
+;    DECL E6POS POINT
+;    DECL CHAR COLOR[]
+;    DECL REAL SIZE
+;    
+;    BOOL ret
+;    
+;    INT HANDLE
+;    
+;    IF fopen(filename[], "a", HANDLE) THEN
+;        ret = fprintf(HANDLE, SPRINTF("<circle r='"'%s'"' cx='"'%s'"' cy='"'%s'"' style='"'opacity:1;fill:%s;fill-opacity:1;'"' />", FTOS(SIZE), FTOS(POINT.x), FTOS(POINT.y), COLOR[]))
+;        ret = fclose(HANDLE)
+;        
+;    ENDIF
+;END
+;
+;global DEF writeSvgPoints(filename[]:IN, POINTS[]:OUT, NPOINTS:IN)
+;    DECL CHAR FILENAME[]
+;    DECL E6POS POINTS[]
+;    DECL INT NPOINTS
+;    BOOL ret
+;    
+;    INT index
+;    INT HANDLE
+;    
+;    IF fopen(filename[], "a", HANDLE) THEN
+;        for index=1 to NPOINTS
+;            ret = fprintf(HANDLE, SPRINTF("<circle id='"'%s'"' r='"'%s'"' cx='"'%s'"' cy='"'%s'"' style='"'opacity:1;fill:%s;fill-opacity:1;'"' />",ITOS(index), FTOS(1.0), FTOS(POINTS[index].x), FTOS(POINTS[index].y), "black"))
+;        endfor   
+;        
+;        ret = fclose(HANDLE)
+;        
+;    ENDIF
+;END
+;
+;;given the array of POINTS, it writes into svg file the points starting at INDEX_START up to INDEX_START + COUNT
+;global DEF writeSvgPointsRange(filename[]:IN, POINTS[]:OUT, INDEX_START:IN, COUNT:IN)
+;    DECL CHAR FILENAME[]
+;    DECL E6POS POINTS[]
+;    DECL INT INDEX_START
+;    DECL INT COUNT
+;    BOOL ret
+;    
+;    INT index
+;    INT HANDLE
+;    
+;    IF fopen(filename[], "a", HANDLE) THEN
+;        for index=INDEX_START to (INDEX_START + COUNT)
+;            ret = fprintf(HANDLE, SPRINTF("<circle id='"'%s'"' r='"'%s'"' cx='"'%s'"' cy='"'%s'"' style='"'opacity:1;fill:%s;fill-opacity:1;'"' />",ITOS(index), FTOS(1.0), FTOS(POINTS[index].x), FTOS(POINTS[index].y), "black"))
+;        endfor   
+;        
+;        ret = fclose(HANDLE)
+;        
+;    ENDIF
+;END
+;
+;global DEF writeSvgCircs(filename[]:IN, CIRCS[]:OUT, NCIRCS:IN)
+;    DECL CHAR FILENAME[]
+;    DECL STR_CIRC CIRCS[]
+;    DECL INT NCIRCS
+;    BOOL ret
+;    
+;    INT index
+;    INT HANDLE
+;    
+;    IF fopen(filename[], "a", HANDLE) THEN
+;        for index=1 to NCIRCS
+;            ret = fprintf(HANDLE, SPRINTF("<circle id='"'%s'"' r='"'%s'"' cx='"'%s'"' cy='"'%s'"' style='"'opacity:0.3;fill:%s;fill-opacity:1;'"' />",ITOS(index), FTOS(CIRCS[index].radius), FTOS(CIRCS[index].center.x), FTOS(CIRCS[index].center.y), "green"))
+;        endfor   
+;        
+;        ret = fclose(HANDLE)
+;        
+;    ENDIF
+;END
+;
+;;writes N pipes e returns the index of the last vertex so allowing the further writing of other models
+;global DEFFCT INT writeObjModelPipes(filename[]:IN, circs1[]:OUT, circs2[]:OUT, ncircs:IN, baseVertexOffset:IN)
+;    DECL CHAR filename[]
+;    DECL STR_CIRC circs1[]
+;    DECL STR_CIRC circs2[]
+;    DECL INT ncircs
+;    DECL INT baseVertexOffset
+;    BOOL ret
+;    
+;    INT circ_resolution
+;    INT angle_step
+;    FRAME points_circ1[20]
+;    FRAME points_circ2[20]
+;    
+;    CHAR MODE[3]
+;    
+;    INT index
+;    INT HANDLE
+;    INT offset
+;    
+;    circ_resolution = 20
+;    
+;    MODE[] = "a"
+;    ;if the parameter baseVertexOffset has been provided it means that additional models are to be appended to an already existing file
+;    ; so the file is opened for append, otherwise it would be overwritten
+;    IF VARSTATE("baseVertexOffset") <> #INITIALIZED THEN
+;        MODE[] = "w"
+;        baseVertexOffset = 0
+;    ENDIF
+;    
+;    IF fopen(filename[], MODE[], HANDLE) THEN
+;        
+;        for index = 1 to ncircs
+;            ret = fprintf(HANDLE, sprintf("o Tubo%s", ITOS(index)))
+;            ret = fprintf(HANDLE, "#vertices")
+;            for angle_step = 1 to circ_resolution
+;                points_circ1[angle_step].x = cos(360/circ_resolution*angle_step)*circs1[index].radius+circs1[index].center.x
+;                points_circ1[angle_step].y = circs1[index].center.y
+;                points_circ1[angle_step].z = circs1[index].center.z + sin(360/circ_resolution*angle_step)*circs1[index].radius
+;                ret = fprintf(HANDLE, sprintf("v %s %s %s", FTOS(points_circ1[angle_step].x), FTOS(points_circ1[angle_step].y), FTOS(points_circ1[angle_step].z)))
+;                ;wait sec 0.001
+;            endfor
+;            
+;            for angle_step = 1 to circ_resolution
+;                points_circ2[angle_step].x = cos(360/circ_resolution*angle_step)*circs2[index].radius+circs2[index].center.x
+;                points_circ2[angle_step].y = circs2[index].center.y
+;                points_circ2[angle_step].z = circs2[index].center.z + sin(360/circ_resolution*angle_step)*circs2[index].radius
+;                ret = fprintf(HANDLE, sprintf("v %s %s %s", FTOS(points_circ2[angle_step].x), FTOS(points_circ2[angle_step].y), FTOS(points_circ2[angle_step].z)))
+;                ;wait sec 0.001
+;            endfor
+;            ret = fprintf(HANDLE, "#faces")
+;            offset = baseVertexOffset + circ_resolution*2*(index-1) ;gli indici dei vertici sono assoluti
+;            for angle_step = 1 to circ_resolution-1
+;                ret = fprintf(HANDLE, sprintf("f %s %s %s",ITOS(angle_step+offset), ITOS(angle_step+1+offset), ITOS(angle_step+circ_resolution+offset)))
+;                ret = fprintf(HANDLE, sprintf("f %s %s %s",ITOS(angle_step+1+offset), ITOS(angle_step+circ_resolution+1+offset), ITOS(angle_step+circ_resolution+offset)))
+;            endfor
+;            ret = fprintf(HANDLE, sprintf("f %s %s %s",ITOS(angle_step+offset), ITOS(1+offset), ITOS(angle_step+circ_resolution+offset)))
+;            ret = fprintf(HANDLE, sprintf("f %s %s %s",ITOS(1+offset), ITOS(circ_resolution+1+offset), ITOS(angle_step+circ_resolution+offset)))
+;        endfor
+;        ret = fclose(HANDLE)   
+;    ENDIF
+;    return offset + circ_resolution*2 + 1
+;ENDFCT
+;
+;global DEFFCT INT writeObjModelRectangle(filename[]:IN, name[]:IN, p1:IN, p2:IN, p3:IN, p4:IN, baseVertexOffset:IN)
+;    DECL CHAR filename[]
+;    DECL CHAR name[]
+;    DECL FRAME p1, p2, p3, p4
+;    DECL INT baseVertexOffset
+;    BOOL ret
+;    
+;    FRAME point
+;    CHAR MODE[3]
+;    
+;    INT HANDLE
+;    
+;    MODE[] = "a"
+;    ;if the parameter baseVertexOffset has been provided it means that additional models are to be appended to an already existing file
+;    ; so the file is opened for append, otherwise it would be overwritten
+;    IF VARSTATE("baseVertexOffset") <> #INITIALIZED THEN
+;        MODE[] = "w"
+;        baseVertexOffset = 0
+;    ENDIF
+;    
+;    IF fopen(filename[], MODE[], HANDLE) THEN
+;        
+;        ret = fprintf(HANDLE, sprintf("o rect.%s", name[]))
+;        ret = fprintf(HANDLE, "#vertices")
+;        
+;        ret = fprintf(HANDLE, sprintf("v %s %s %s", FTOS(p1.x), FTOS(p1.y), FTOS(p1.z)))
+;        ret = fprintf(HANDLE, sprintf("v %s %s %s", FTOS(p2.x), FTOS(p2.y), FTOS(p2.z)))
+;        ret = fprintf(HANDLE, sprintf("v %s %s %s", FTOS(p3.x), FTOS(p3.y), FTOS(p3.z)))
+;        ret = fprintf(HANDLE, sprintf("v %s %s %s", FTOS(p4.x), FTOS(p4.y), FTOS(p4.z)))
+;        
+;        ret = fprintf(HANDLE, "#faces")
+;        ret = fprintf(HANDLE, sprintf("f %s %s %s",ITOS(baseVertexOffset), ITOS(baseVertexOffset+1), ITOS(baseVertexOffset+2)))
+;        ret = fprintf(HANDLE, sprintf("f %s %s %s",ITOS(baseVertexOffset), ITOS(baseVertexOffset+3), ITOS(baseVertexOffset+2)))
+;        ret = fclose(HANDLE)   
+;    ENDIF
+;    return baseVertexOffset+4
+;ENDFCT

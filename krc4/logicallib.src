@@ -1,0 +1,86 @@
+&ACCESS RV
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF logicallib( )
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmail.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library provides a set of functions for logical operations
+END
+
+;choose an integer value based on a boolean condition
+global DEFFCT INT BOOL_CHOOSEI(CONDITION:IN, TRUEVALUE:IN, FALSEVALUE:IN)
+   DECL BOOL CONDITION
+   DECL INT TRUEVALUE
+   DECL INT FALSEVALUE
+   IF CONDITION THEN
+      RETURN TRUEVALUE
+   ENDIF
+   RETURN FALSEVALUE
+ENDFCT
+
+;choose a floating point value based on a boolean condition
+global DEFFCT REAL BOOL_CHOOSEF(CONDITION:IN, TRUEVALUE:IN, FALSEVALUE:IN)
+   DECL BOOL CONDITION
+   DECL REAL TRUEVALUE
+   DECL REAL FALSEVALUE
+   IF CONDITION THEN
+      RETURN TRUEVALUE
+   ENDIF
+   RETURN FALSEVALUE
+ENDFCT
+
+;choose an e6pos value based on a boolean condition
+global DEFFCT E6POS BOOL_CHOOSE_E6POS(CONDITION:IN, TRUEVALUE:IN, FALSEVALUE:IN)
+   DECL BOOL CONDITION
+   DECL E6POS TRUEVALUE
+   DECL E6POS FALSEVALUE
+   IF CONDITION THEN
+      RETURN TRUEVALUE
+   ENDIF
+   RETURN FALSEVALUE
+ENDFCT
+
+;choose a string based on a boolean condition
+global DEFFCT CHAR[256] BOOL_CHOOSESTR(CONDITION:IN, TRUEVALUE[]:IN, FALSEVALUE[]:IN)
+   DECL BOOL CONDITION
+   DECL CHAR TRUEVALUE[]
+   DECL CHAR FALSEVALUE[]
+   IF CONDITION THEN
+      RETURN TRUEVALUE[]
+   ENDIF
+   RETURN FALSEVALUE[]
+ENDFCT
+
+;choose a floating point value based on an integer condition
+global DEFFCT REAL INT_CHOOSEF(CONDITION:IN, DEFAULTVALUE:IN, CASE0:IN, CASE1:IN, CASE2:IN, CASE3:IN, CASE4:IN, CASE5:IN, CASE6:IN, CASE7:IN, CASE8:IN, CASE9:IN)
+   DECL INT CONDITION
+   DECL INT DEFAULTVALUE
+   DECL REAL CASE0, CASE1, CASE2, CASE3, CASE4, CASE5, CASE6, CASE7, CASE8, CASE9
+   SWITCH CONDITION
+      CASE 0
+         return CASE0        
+      CASE 1
+         return CASE1
+      CASE 2
+         return CASE2
+      CASE 3
+         return CASE3
+      CASE 4
+         return CASE4
+      CASE 5
+         return CASE5
+      CASE 6
+         return CASE6
+      CASE 7
+         return CASE7
+      CASE 8
+         return CASE8
+      CASE 9
+         return CASE9
+      DEFAULT
+         return DEFAULTVALUE
+   ENDSWITCH         
+ENDFCT
