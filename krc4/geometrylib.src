@@ -3,11 +3,12 @@
 &PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
 DEF geometrylib( )
    ; Author:      Davide Rosa
-   ; e-mail:      dddomodossola@gmailine2.com
+   ; e-mail:      dddomodossola@gmail.com
    ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
 
    ; DESCRIPTION:
-   ; This library 
+   ; This library provides geometric data structures and funcions
+   ;   For 2D primitives, the plane is X/Y
 END
 
 ;to be tested
