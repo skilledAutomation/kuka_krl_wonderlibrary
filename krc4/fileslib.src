@@ -27,6 +27,12 @@ DEF fileslib()
     
 END
 
+global DEF MSG( STRINGA:IN )
+    DECL CHAR STRINGA[]
+    MsgNotify( STRINGA[], "WONDERLIB", )
+    wait sec 0
+END
+
 DEFFCT BOOL fileCheckResultCode(STAT:IN)
     DECL STATE_T STAT
     INT RESULT_CODE
