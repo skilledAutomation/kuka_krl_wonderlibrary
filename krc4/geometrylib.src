@@ -1,0 +1,104 @@
+&ACCESS RV
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF geometrylib( )
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmailine2.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library 
+END
+
+;to be tested
+global DEFFCT STR_LINE2D LINE2D_FROM_2P(p1:IN, p2:IN)
+   E6POS p1
+   E6POS p2
+   DECL STR_LINE2D line
+
+   REAL d, e
+
+   d = p2.y - p1.y
+   e = p2.x - p1.x
+   line.a = d
+   line.b = -e
+   line.c = (e * p1.y) - (d * p1.x);
+
+   line = LINE2D_FROM_ABC(line.a, line.b, line.c)
+
+ENDFCT
+
+;to be tested
+global DEFFCT STR_LINE2D LINE2D_FROM_ABC(a:IN, b:IN, c:IN)
+   REAL a
+   REAL b
+   REAL c
+
+   DECL STR_LINE2D line
+
+   line.a = a
+   line.b = b
+   line.c = c
+
+   ;explicit form
+   if (line.b == 0) then
+      line.m = 0
+      line.q = 0
+      
+   else
+      line.m = (-line.a) / line.b
+      line.q = (-line.c) / line.b
+
+   endif
+
+ENDFCT
+
+;to be tested
+global DEFFCT REAL LINE2D_DIST_FROM_POINT(p:IN)
+   E6POS p
+   REAL denominator
+
+   denominator = sqrt(a*a + b*b)
+
+    ;questo non puo' verificarsi perché affinché ci sia una retta a e b non possono essere contemporaneamente nulli
+   if (denominator == 0) then
+      return 0
+   endif
+
+   return abs(a * p.x + b * p.y + c) / denominator;
+}
+
+;to be tested
+global DEFFCT REAL LINE2D_Y_GIVEN_X(x:IN)
+   REAL x
+   ; ax + by + c = 0
+   if (line.b == 0) then
+      return 0
+   endif
+
+   return ((-line.a * x) - line.c) / line.b
+ENDFCT
+
+;to be tested
+global DEFFCT REAL LINE2D_X_GIVEN_Y(x:IN)
+   REAL y
+   ; ax + by + c = 0
+   if (line.a == 0) then
+      return 0
+   endif
+
+   return ((-line.b * y) - line.c) / line.a
+ENDFCT
+
+;to be tested
+;unsafe: add denominator check to prevent disision by 0
+global DEFFCT E6POS LINE2D_INTERSECTION(line1, line2)
+   DECL STR_LINE2D line1
+   DECL STR_LINE2D line2
+   E6POS intersection
+
+   intersection.y = ((-line1.a * line2.c) + (line1.c * line2.a)) / ((-line2.a * line1.b) + (line1.a * line2.b));
+   intersection.x = ((-line1.b * p.y) - line1.c) / line1.a;
+
+   return intersection
+ENDFCT
