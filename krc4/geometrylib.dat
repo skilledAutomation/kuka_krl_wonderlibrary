@@ -11,4 +11,6 @@ DEFDAT geometrylib
    ;   For 2D primitives, the plane is X/Y
 
    global STRUC STR_LINE2D REAL A, B, C, M, Q
+
+   global STRUC STR_PLANE REAL A, B, C, D ;ax + by + cz + d = 0
 ENDDAT

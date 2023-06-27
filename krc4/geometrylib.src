@@ -103,3 +103,75 @@ global DEFFCT E6POS LINE2D_INTERSECTION(line1, line2)
 
    return intersection
 ENDFCT
+
+;calculate the plane given 3 points
+global DEFFCT STR_PLANE PLANE_FROM_3p(p1:IN, p2:IN, p3:IN)
+   DECL E6POS p1
+   DECL E6POS p2
+   DECL E6POS p3
+   REAL a21, a22, a23, a31, a32, a33
+   
+   DECL STR_PLANE plane
+
+   a21 = p2.x - p1.x;
+   a22 = p2.y - p1.y;
+   a23 = p2.z - p1.z;
+   a31 = p3.x - p1.x;
+   a32 = p3.y - p1.y;
+   a33 = p3.z - p1.z;
+   plane.a = a22 * a33 - a23 * a32;
+   plane.b = a23 * a31 - a21 * a33;
+   plane.c = a21 * a32 - a22 * a31;
+   plane.d = -p1.x * a22 * a33 - p1.y * a23 * a31 - p1.z * a21 * a32 + p1.z * a22 * a31 + p1.y * a21 * a33 + p1.x * a23 * a32;
+ENDFCT
+
+;calculate x coordinate on a plane, given y and z values
+global DEFFCT REAL PLANE_X_GivenYZ(plane:IN, y:IN, z:IN)
+   DECL STR_PLANE plane
+   REAL y
+   REAL z
+   REAL x
+
+   x = 0.0;
+   if NOT (plane.a == 0) then
+      x = (-plane.b * y - plane.c * z - plane.d) / plane.a;
+   endif
+   return x
+ENDFCT
+
+;calculate y coordinate on a plane, given x and z values
+global DEFFCT REAL PLANE_Y_GivenXZ(plane:IN, x:IN, z:IN)
+   DECL STR_PLANE plane
+   REAL z
+   REAL x
+   REAL y
+
+   y = 0.0;
+   if NOT (plane.b == 0) then
+      y = (-plane.a * x - plane.c * z - plane.d) / plane.b;
+   endif
+   return y
+ENDFCT
+
+;calculate z coordinate on a plane, given x and y values
+global DEFFCT REAL PLANE_Y_GivenXZ(plane:IN, x:IN, y:IN)
+   DECL STR_PLANE plane
+   REAL x
+   REAL y
+   REAL z
+
+   z = 0.0;
+   if NOT (plane.c == 0) then
+      z = (-plane.a * x - plane.b * y - plane.d) / plane.c;
+   endif
+   return z
+ENDFCT
+
+;calculate the distance between a plane and a point
+global DEFFCT REAL PLANE_DIST_TO_POINT(plane:IN, p:IN)
+   DECL STR_PLANE plane
+   DECL E6POS p
+   return abs(p.x + p.y + p.z + plane.d) / sqrt((plane.a * plane.a) + (plane.b * plane.b) + (plane.c * plane.c))
+ENDFCT
+
+
