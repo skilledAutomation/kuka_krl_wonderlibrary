@@ -161,7 +161,7 @@ global DEFFCT REAL PLANE_Y_GivenXZ(plane:IN, x:IN, z:IN)
 ENDFCT
 
 ;calculate z coordinate on a plane, given x and y values
-global DEFFCT REAL PLANE_X_GivenXY(plane:IN, x:IN, y:IN)
+global DEFFCT REAL PLANE_Z_GivenXY(plane:IN, x:IN, y:IN)
    DECL STR_PLANE plane
    REAL x
    REAL y
