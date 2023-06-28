@@ -13,4 +13,13 @@ DEFDAT geometrylib
    global STRUC STR_LINE2D REAL A, B, C, M, Q
 
    global STRUC STR_PLANE REAL A, B, C, D ;ax + by + cz + d = 0
+
+   ;In the orthonormal reference system RC(O,i,j,k)
+   ;  a vector is identified as:
+   ;      v = l*i + m*j + n*k
+   global STRUC STR_VECTOR3D REAL L, M, N
+
+   global STRUC STR_LINE3D STR_PLANE plane1, plane2, E6POS point, STR_VECTOR3D vec
+
+   REAL M_PI = 3.1415926535
 ENDDAT

@@ -174,4 +174,208 @@ global DEFFCT REAL PLANE_DIST_TO_POINT(plane:IN, p:IN)
    return abs(p.x + p.y + p.z + plane.d) / sqrt((plane.a * plane.a) + (plane.b * plane.b) + (plane.c * plane.c))
 ENDFCT
 
+global DEFFCT STR_LINE3D LINE3D_FROM_PLANES(plane1:IN, plane2:IN)
+   DECL STR_PLANE plane1
+   DECL STR_PLANE plane2
+   DECL STR_LINE3D line3d
 
+   line3d.plane1 = plane1
+   line3d.plane2 = plane2
+
+   line3d.point.x = 0
+   line3d.point.y = +plane1.c * plane2.d / (plane1.b * plane2.c - plane1.c * plane2.b) - plane1.d * plane2.c / (plane1.b * plane2.c - plane1.c * plane2.b)
+   line3d.point.z = -plane1.b * plane2.d / (plane1.b * plane2.c - plane1.c * plane2.b) + plane1.d * plane2.b / (plane1.b * plane2.c - plane1.c * plane2.b)
+
+   line3d.vec.l = 1
+   line3d.vec.m = (-plane1.a * plane2.c + plane1.c * plane2.a) / (plane1.b * plane2.c - plane1.c * plane2.b)
+   line3d.vec.n = (plane1.a * plane2.b - plane1.b * plane2.a) / (plane1.b * plane2.c - plane1.c * plane2.b)
+
+   return line3d
+ENDFCT
+
+global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
+   DECL E6POS point
+   DECL STR_VECTOR3D vec
+   DECL STR_LINE3D line3d
+
+   INT count
+
+   line3d.point = point
+   line3d.vec = vec
+
+   count = 0
+   if (NOT (vec.l == 0)) then
+      count = count + 1
+   endif
+   if (NOT (vec.m == 0)) then
+      count = count + 1
+   endif
+   if (NOT (vec.n == 0)) then
+      count = count + 1
+   endif
+
+   if (count == 3) then
+      line3d.plane1.a = -(vec.m / vec.l)
+      line3d.plane1.b = 1 
+      line3d.plane1.c = 0
+      line3d.plane1.d = point.x * vec.m / vec.l - point.y
+
+      line3d.plane2.a = -(vec.n / vec.l)
+      line3d.plane2.b = 0
+      line3d.plane2.c = 1
+      line3d.plane2.d = point.x * vec.n / vec.l - point.z
+   endif
+
+   if (count == 2) then
+      if (vec.l == 0.0) then
+         line3d.plane1.a = 1
+         line3d.plane1.b = 0
+         line3d.plane1.c = 0
+         line3d.plane1.d = point.x
+         line3d.plane2.a = 0
+         line3d.plane2.b = -(vec.n / vec.m)
+         line3d.plane2.c = 1
+         line3d.plane2.d = (vec.n * point.y) / vec.m
+      endif
+     if (vec.m == 0.0) then
+         line3d.plane1.a = 0
+         line3d.plane1.b = 1
+         line3d.plane1.c = 0
+         line3d.plane1.d = point.y
+         line3d.plane2.a = -(vec.n / vec.l)
+         line3d.plane2.b = 0
+         line3d.plane2.c = 1
+         line3d.plane2.d = (vec.n * point.x) / vec.l
+     endif
+     if (vec.n == 0.0) then
+         line3d.plane1.a = 0
+         line3d.plane1.b = 0
+         line3d.plane1.c = 1
+         line3d.plane1.d = point.z
+         line3d.plane2.a = -(vec.m / vec.l)
+         line3d.plane2.b = 1
+         line3d.plane2.c = 0
+         line3d.plane2.d = (vec.m * point.x) / vec.l
+     endif
+   endif
+
+   if (count == 1) then
+      if (vec.l <> 0.0) then
+         line3d.plane1.a = 0
+         line3d.plane1.b = 1
+         line3d.plane1.c = 0
+         line3d.plane1.d = point.y
+         line3d.plane2.a = 0
+         line3d.plane2.b = 0
+         line3d.plane2.c = 1
+         line3d.plane2.d = point.z
+      endif
+      if (vec.m <> 0.0) then
+         line3d.plane1.a = 1
+         line3d.plane1.b = 0
+         line3d.plane1.c = 0
+         line3d.plane1.d = point.x
+         line3d.plane2.a = 0
+         line3d.plane2.b = 0
+         line3d.plane2.c = 1
+         line3d.plane2.d = point.z
+      endif
+      if (vec.n <> 0.0) then
+         line3d.plane1.a = 1
+         line3d.plane1.b = 0
+         line3d.plane1.c = 0
+         line3d.plane1.d = point.x
+         line3d.plane1.a = 0
+         line3d.plane1.b = 1
+         line3d.plane1.c = 0
+         line3d.plane1.d = point.y
+      endif
+   endif
+
+   return line3d
+ENDFCT
+
+global DEFFCT E6POS LINE3D_POINT_FROM_ORIGIN(line3d:IN, distance:IN)
+   DECL STR_LINE3D line3d
+   DECL REAL distance
+   DECL E6POS point
+
+   
+   point.x = line3d.point.x + distance * line3d.vec.l
+   point.y = line3d.point.y + distance * line3d.vec.m
+   point.z = line3d.point.z + distance * line3d.vec.n
+   return point
+ENDFCT
+
+global DEFFCT STR_VECTOR3D VECTOR3D_DIRECTOR_COSINE(vec:IN)
+   DECL STR_VECTOR3D vec
+   DECL STR_VECTOR3D res
+   
+   res.l = vec.l / sqrt(vec.l * vec.l + vec.m * vec.m + vec.n * vec.n)
+   res.m = vec.m / sqrt(vec.l * vec.l + vec.m * vec.m + vec.n * vec.n)
+   res.n = vec.n / sqrt(vec.l * vec.l + vec.m * vec.m + vec.n * vec.n)
+   return res
+ENDFCT
+
+;returns polar spherical coordinates of the 3d line. angles are expressed in degrees
+global DEF LINE3D_TO_POLAR_COORD(line3d:IN, radius:OUT, polar_angle:OUT, azimut:OUT)
+   DECL STR_LINE3D line3d
+   DECL REAL radius
+   DECL REAL polar_angle
+   DECL REAL azimut
+   ;float& r /*raggio*/, float& B /*angolo polare*/, float& C /*azimut*/)
+   radius = sqrt((line3d.vec.l * line3d.vec.l) + (line3d.vec.m * line3d.vec.m) + (line3d.vec.n * line3d.vec.n))
+   polar_angle = atan2(sqrt(line3d.vec.l * line3d.vec.l + line3d.vec.m * line3d.vec.m), line3d.vec.n) * 180.0 / M_PI
+   azimut = atan2(line3d.vec.m, line3d.vec.l) * 180.0 / M_PI;
+END
+
+;this procedure calculate one coordinate given a line3d and the other two coordinates
+global DEF LINE3D_yzGivenX(line3d:IN, x:IN, y:OUT, z:OUT)
+   DECL STR_LINE3D line3d
+   DECL REAL x
+   DECL REAL y
+   DECL REAL z
+   z = 0.0
+   if ((line3d.plane1.b <> 0) AND (line3d.plane2.c <> 0) AND ((1.0 - line3d.plane2.b * line3d.plane1.c * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c)) <> 0)) then
+      z = (line3d.plane2.b * line3d.plane1.a * x * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c) + line3d.plane2.b * line3d.plane1.d * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c) - line3d.plane2.a * x * (1.0 / line3d.plane2.c) - line3d.plane2.d * (1.0 / line3d.plane2.c)) / (1.0 - line3d.plane2.b * line3d.plane1.c * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c))
+   endif
+
+   y = 0.0
+   if (line3d.plane1.b <> 0.0) then
+     y = (-line3d.plane1.c * z - line3d.plane1.a * x - line3d.plane1.d) / line3d.plane1.b;
+   endif
+END
+
+;this procedure calculate one coordinate given a line3d and the other two coordinates
+global DEF LINE3D_xzGivenY(line3d:IN, x:OUT, y:IN, z:OUT)
+   DECL STR_LINE3D line3d
+   DECL REAL x
+   DECL REAL y
+   DECL REAL z
+   z = 0.0
+   if ((line3d.plane1.a <> 0) AND (line3d.plane2.c <> 0) AND ((1.0 - line3d.plane2.a * line3d.plane1.c * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c)) <> 0)) then
+      z = (line3d.plane2.a * line3d.plane1.b * y * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c) + line3d.plane2.a * line3d.plane1.d * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c) - line3d.plane2.b * y * (1.0 / line3d.plane2.c) - line3d.plane2.d * (1.0 / line3d.plane2.c)) / (1.0 - line3d.plane2.a * line3d.plane1.c * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c))
+   endif
+
+   x = 0.0
+   if (line3d.plane1.a <> 0) then
+      x = (-line3d.plane1.c * z - line3d.plane1.b * y - line3d.plane1.d) / line3d.plane1.a;
+   endif
+END
+
+;this procedure calculate one coordinate given a line3d and the other two coordinates
+global DEF LINE3D_xyGivenZ(line3d:IN, x:OUT, y:OUT, z:IN)
+   DECL STR_LINE3D line3d
+   DECL REAL x
+   DECL REAL y
+   DECL REAL z
+   y = 0.0
+   if ((line3d.plane1.a <> 0) AND (line3d.plane2.b <> 0) AND ((1.0 - line3d.plane2.a * line3d.plane1.b * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b)) <> 0)) then
+      y = (line3d.plane2.a * line3d.plane1.c * z * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b) + line3d.plane2.a * line3d.plane1.d * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b) - line3d.plane2.c * z * (1.0 / line3d.plane2.b) - line3d.plane2.d * (1.0 / line3d.plane2.b)) / (1.0 - line3d.plane2.a * line3d.plane1.b * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b))
+   endif
+
+   x = 0.0
+   if (line3d.plane1.a <> 0) then
+      x = (-line3d.plane1.b * y - line3d.plane1.c * z - line3d.plane1.d) / line3d.plane1.a;
+   endif
+END
