@@ -1,7 +1,7 @@
 &ACCESS RV
 &PARAM EDITMASK = *
 &PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
-DEFDAT logicallib
+DEFDAT logicallib PUBLIC
    ; Author:      Davide Rosa
    ; e-mail:      dddomodossola@gmail.com
    ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary

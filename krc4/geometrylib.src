@@ -27,6 +27,7 @@ global DEFFCT STR_LINE2D LINE2D_FROM_2P(p1:IN, p2:IN)
 
    line = LINE2D_FROM_ABC(line.a, line.b, line.c)
 
+   return line
 ENDFCT
 
 ;to be tested
@@ -52,25 +53,28 @@ global DEFFCT STR_LINE2D LINE2D_FROM_ABC(a:IN, b:IN, c:IN)
 
    endif
 
+   return line
 ENDFCT
 
 ;to be tested
-global DEFFCT REAL LINE2D_DIST_FROM_POINT(p:IN)
+global DEFFCT REAL LINE2D_DIST_FROM_POINT(line:IN, p:IN)
+   DECL STR_LINE2D line
    E6POS p
    REAL denominator
 
-   denominator = sqrt(a*a + b*b)
+   denominator = sqrt(line.a*line.a + line.b*line.b)
 
-    ;questo non puo' verificarsi perché affinché ci sia una retta a e b non possono essere contemporaneamente nulli
+    ;questo non puo' verificarsi perchÃ© affinchÃ© ci sia una retta a e b non possono essere contemporaneamente nulli
    if (denominator == 0) then
       return 0
    endif
 
-   return abs(a * p.x + b * p.y + c) / denominator;
-}
+   return abs(line.a * p.x + line.b * p.y + line.c) / denominator;
+ENDFCT
 
 ;to be tested
-global DEFFCT REAL LINE2D_Y_GIVEN_X(x:IN)
+global DEFFCT REAL LINE2D_Y_GIVEN_X(line:IN, x:IN)
+   DECL STR_LINE2D line
    REAL x
    ; ax + by + c = 0
    if (line.b == 0) then
@@ -81,7 +85,8 @@ global DEFFCT REAL LINE2D_Y_GIVEN_X(x:IN)
 ENDFCT
 
 ;to be tested
-global DEFFCT REAL LINE2D_X_GIVEN_Y(x:IN)
+global DEFFCT REAL LINE2D_X_GIVEN_Y(line:IN, y:IN)
+   DECL STR_LINE2D line
    REAL y
    ; ax + by + c = 0
    if (line.a == 0) then
@@ -93,13 +98,13 @@ ENDFCT
 
 ;to be tested
 ;unsafe: add denominator check to prevent disision by 0
-global DEFFCT E6POS LINE2D_INTERSECTION(line1, line2)
+global DEFFCT E6POS LINE2D_INTERSECTION(line1:IN, line2:IN)
    DECL STR_LINE2D line1
    DECL STR_LINE2D line2
    E6POS intersection
 
    intersection.y = ((-line1.a * line2.c) + (line1.c * line2.a)) / ((-line2.a * line1.b) + (line1.a * line2.b));
-   intersection.x = ((-line1.b * p.y) - line1.c) / line1.a;
+   intersection.x = ((-line1.b * intersection.y) - line1.c) / line1.a;
 
    return intersection
 ENDFCT
@@ -123,6 +128,8 @@ global DEFFCT STR_PLANE PLANE_FROM_3p(p1:IN, p2:IN, p3:IN)
    plane.b = a23 * a31 - a21 * a33;
    plane.c = a21 * a32 - a22 * a31;
    plane.d = -p1.x * a22 * a33 - p1.y * a23 * a31 - p1.z * a21 * a32 + p1.z * a22 * a31 + p1.y * a21 * a33 + p1.x * a23 * a32;
+   
+   return plane
 ENDFCT
 
 ;calculate x coordinate on a plane, given y and z values
@@ -154,7 +161,7 @@ global DEFFCT REAL PLANE_Y_GivenXZ(plane:IN, x:IN, z:IN)
 ENDFCT
 
 ;calculate z coordinate on a plane, given x and y values
-global DEFFCT REAL PLANE_Y_GivenXZ(plane:IN, x:IN, y:IN)
+global DEFFCT REAL PLANE_X_GivenXY(plane:IN, x:IN, y:IN)
    DECL STR_PLANE plane
    REAL x
    REAL y
