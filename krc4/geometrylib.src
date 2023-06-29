@@ -5,28 +5,35 @@ DEF geometrylib( )
    ; Author:      Davide Rosa
    ; e-mail:      dddomodossola@gmail.com
    ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
-
+   
    ; DESCRIPTION:
    ; This library provides geometric data structures and funcions
-   ;   For 2D primitives, the plane is X/Y
+   ;   For 2D and 3D primitives, the plane is X/Y
 END
+
+;returns the 3D distance between two points
+global DEFFCT REAL DISTANCE_POINT_POINT(p1:IN, p2:IN)
+   DECL E6POS p1
+   DECL E6POS p2
+   return sqrt( (p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y) + (p1.z-p2.z)*(p1.z-p2.z))
+ENDFCT
 
 ;to be tested
 global DEFFCT STR_LINE2D LINE2D_FROM_2P(p1:IN, p2:IN)
    E6POS p1
    E6POS p2
    DECL STR_LINE2D line
-
+   
    REAL d, e
-
+   
    d = p2.y - p1.y
    e = p2.x - p1.x
    line.a = d
    line.b = -e
    line.c = (e * p1.y) - (d * p1.x);
-
+   
    line = LINE2D_FROM_ABC(line.a, line.b, line.c)
-
+   
    return line
 ENDFCT
 
@@ -35,13 +42,13 @@ global DEFFCT STR_LINE2D LINE2D_FROM_ABC(a:IN, b:IN, c:IN)
    REAL a
    REAL b
    REAL c
-
+   
    DECL STR_LINE2D line
-
+   
    line.a = a
    line.b = b
    line.c = c
-
+   
    ;explicit form
    if (line.b == 0) then
       line.m = 0
@@ -50,9 +57,9 @@ global DEFFCT STR_LINE2D LINE2D_FROM_ABC(a:IN, b:IN, c:IN)
    else
       line.m = (-line.a) / line.b
       line.q = (-line.c) / line.b
-
+      
    endif
-
+   
    return line
 ENDFCT
 
@@ -61,14 +68,14 @@ global DEFFCT REAL LINE2D_DIST_FROM_POINT(line:IN, p:IN)
    DECL STR_LINE2D line
    E6POS p
    REAL denominator
-
+   
    denominator = sqrt(line.a*line.a + line.b*line.b)
-
-    ;questo non puo' verificarsi perchÃ© affinchÃ© ci sia una retta a e b non possono essere contemporaneamente nulli
+   
+   ;questo non puo' verificarsi perchÃ© affinchÃ© ci sia una retta a e b non possono essere contemporaneamente nulli
    if (denominator == 0) then
       return 0
    endif
-
+   
    return abs(line.a * p.x + line.b * p.y + line.c) / denominator;
 ENDFCT
 
@@ -80,7 +87,7 @@ global DEFFCT REAL LINE2D_Y_GIVEN_X(line:IN, x:IN)
    if (line.b == 0) then
       return 0
    endif
-
+   
    return ((-line.a * x) - line.c) / line.b
 ENDFCT
 
@@ -92,7 +99,7 @@ global DEFFCT REAL LINE2D_X_GIVEN_Y(line:IN, y:IN)
    if (line.a == 0) then
       return 0
    endif
-
+   
    return ((-line.b * y) - line.c) / line.a
 ENDFCT
 
@@ -102,11 +109,168 @@ global DEFFCT E6POS LINE2D_INTERSECTION(line1:IN, line2:IN)
    DECL STR_LINE2D line1
    DECL STR_LINE2D line2
    E6POS intersection
-
+   
    intersection.y = ((-line1.a * line2.c) + (line1.c * line2.a)) / ((-line2.a * line1.b) + (line1.a * line2.b));
    intersection.x = ((-line1.b * intersection.y) - line1.c) / line1.a;
-
+   
    return intersection
+ENDFCT
+
+global DEFFCT STR_CIRCUMFERENCE2D CIRC_FROM_CENTER_RADIUS(center:IN, radius:IN)
+   DECL E6POS center
+   DECL REAL radius
+   DECL STR_CIRCUMFERENCE2D circumference
+   circumference.a = -2.0 * center.x;
+   circumference.b = -2.0 * center.y;
+   circumference.c = (center.x * center.x) + (center.y * center.y) - (radius * radius)
+   return circumference
+ENDFCT
+
+;returns a circumference given 3 points
+global DEFFCT STR_CIRCUMFERENCE2D CIRC_FROM_3POINTS(p1:IN, p2:IN, p3:IN, error:OUT)
+   DECL E6POS p1
+   DECL E6POS p2
+   DECL E6POS p3
+   DECL BOOL error ;true in case of error
+   DECL STR_CIRCUMFERENCE2D circumference
+   REAL e, f, g, h, i, m, q, eg, fm, fh, fpow_p1y, fpow_p3x;
+   
+   ; https://www.youmath.it/forum/geometria-analitica/12735-equazione-di-una-circonferenza-passante-per-tre-punti.html
+   
+   circumference = {A 0, B 0, C 0}
+   error = FALSE
+   
+   if ((p1.x == 0.0) OR (p3.y == 0.0)) then
+      error = TRUE
+      return circumference
+   endif
+   
+   e = 1.0 / p1.x
+   f = 1.0 / p3.y
+   g = p3.x * f
+   eg = e * g
+   
+   if ((1.0 - p1.y * eg) == 0) then
+      error = TRUE
+      return circumference
+   endif
+   
+   h = 1.0 / (1.0 - p1.y * eg)
+   i = p1.y * e;
+   m = h * i
+   fm = f * m
+   fh = f * h
+   q = (1.0 + eg * h * p2.y - fh * p2.y - eg * m * p2.x + fm * p2.x - e * p2.x)
+   
+   if (q == 0) then
+      error = TRUE
+      return circumference
+   endif
+   
+   fpow_p1y = (p1.y * p1.y)
+   fpow_p3x = (p3.x * p3.x)
+   circumference.c = (-(p2.x * p2.x) - (p2.y * p2.y) + p1.x * p2.x + fpow_p1y * e * p2.x - fpow_p3x * fm * p2.x - p3.y * m * p2.x + p1.x * g * m * p2.x + fpow_p1y * eg * m * p2.x + fpow_p3x * fh * p2.y + p3.y * h * p2.y - p1.x * g * h * p2.y - fpow_p1y * eg * h * p2.y) / q;
+   circumference.a = -(p1.x + fpow_p1y * e - fpow_p3x * fm - p3.y * m + p1.x * g * m + fpow_p1y * eg * m + circumference.c * eg * m - circumference.c * fm + circumference.c * e);
+   circumference.b = -fpow_p3x * fh - p3.y * h + p1.x * g * h + fpow_p1y * eg * h + circumference.c * eg * h - circumference.c * fh;
+   
+   return circumference
+ENDFCT
+
+;returns radical axis given 2 circumferences
+global DEFFCT STR_LINE2D RADICAL_AXIS(c1:IN, c2:IN)
+   DECL STR_CIRCUMFERENCE2D c1
+   DECL STR_CIRCUMFERENCE2D c2
+   DECL STR_LINE2D radicalAxis
+   
+   radicalAxis.a = c1.a - c2.a
+   radicalAxis.b = c1.b - c2.b
+   radicalAxis.c = c1.c - c2.c
+   
+   radicalAxis = LINE2D_FROM_ABC(radicalAxis.a, radicalAxis.b, radicalAxis.c)
+   
+   return radicalAxis
+ENDFCT
+
+;calculates the intersection between a line2d and a circumference, 
+;   returns the number of intersections and the intersection points as reference parameters 
+global DEFFCT INT LINE2D_CIRC_INTERSECTION(line:IN, circumference:IN, intersectionPoint1:OUT, intersectionPoint2:OUT)
+   DECL STR_LINE2D line
+   DECL STR_CIRCUMFERENCE2D circumference
+   DECL E6POS intersectionPoint1
+   DECL E6POS intersectionPoint2
+   REAL cofa, cofb, cofc, delta
+   INT nresults
+   DECL STR_CIRCUMFERENCE2D circle
+   
+   ; check divisors to avoid zero division
+   if ((line.a == 0) AND (line.b == 0)) then
+      return 0
+   endif
+   
+   circle = circumference
+   if (line.b == 0) then
+      line.m = -line.b / line.a
+      line.q = -line.c / line.a
+      circle.a = circumference.b
+      circle.b = circumference.a
+      
+   else
+      line.m = -line.a / line.b
+      line.q = -line.c / line.b
+      
+   endif
+   
+   cofb = (+2.0 * line.m * line.q + circle.a + circle.b * line.m)
+   cofa = (1.0 + (line.m * line.m))
+   cofc = +circle.b * line.q + circle.c + (line.q * line.q);
+   delta = (cofb * cofb) - 4.0 * cofa * cofc
+   if (delta < 0) then
+      return 0
+   endif
+   
+   ; check divisors to avoid zero division
+   if (cofa == 0) then
+      return 0
+   endif
+   
+   if (line.b == 0) then
+      intersectionPoint1.y = (-cofb + sqrt(delta)) / (2.0 * cofa)
+      intersectionPoint2.y = (-cofb - sqrt(delta)) / (2.0 * cofa)
+      intersectionPoint1.x = intersectionPoint1.y * line.m + line.q
+      intersectionPoint2.x = intersectionPoint2.y * line.m + line.q
+   else
+      intersectionPoint1.x = (-cofb + sqrt(delta)) / (2.0 * cofa)
+      intersectionPoint2.x = (-cofb - sqrt(delta)) / (2.0 * cofa)
+      intersectionPoint1.y = intersectionPoint1.x * line.m + line.q
+      intersectionPoint2.y = intersectionPoint2.x * line.m + line.q
+   endif
+   
+   if (delta == 0) then
+      nresults = 1
+   else
+      nresults = 2
+   endif
+   
+   return nresults
+   
+ENDFCT
+
+;returns the circumference center
+global DEFFCT E6POS CIRCUMFERENCE_CENTER(circumference:IN)
+   DECL STR_CIRCUMFERENCE2D circumference
+   DECL E6POS center
+   center.x = -circumference.a / 2.0
+   center.y = -circumference.b / 2.0
+   ;center.z = 0.0
+   return center
+ENDFCT
+
+;returns the circumenference radius
+global DEFFCT REAL CIRCUMFERENCE_RADIUS(circumference:IN)
+   DECL STR_CIRCUMFERENCE2D circumference
+   DECL REAL radius
+   radius = sqrt((circumference.a * circumference.a) / 4.0 + (circumference.b * circumference.b) / 4.0 - circumference.c)
+   return radius
 ENDFCT
 
 ;calculate the plane given 3 points
@@ -117,7 +281,7 @@ global DEFFCT STR_PLANE PLANE_FROM_3p(p1:IN, p2:IN, p3:IN)
    REAL a21, a22, a23, a31, a32, a33
    
    DECL STR_PLANE plane
-
+   
    a21 = p2.x - p1.x;
    a22 = p2.y - p1.y;
    a23 = p2.z - p1.z;
@@ -138,7 +302,7 @@ global DEFFCT REAL PLANE_X_GivenYZ(plane:IN, y:IN, z:IN)
    REAL y
    REAL z
    REAL x
-
+   
    x = 0.0;
    if NOT (plane.a == 0) then
       x = (-plane.b * y - plane.c * z - plane.d) / plane.a;
@@ -152,7 +316,7 @@ global DEFFCT REAL PLANE_Y_GivenXZ(plane:IN, x:IN, z:IN)
    REAL z
    REAL x
    REAL y
-
+   
    y = 0.0;
    if NOT (plane.b == 0) then
       y = (-plane.a * x - plane.c * z - plane.d) / plane.b;
@@ -166,7 +330,7 @@ global DEFFCT REAL PLANE_Z_GivenXY(plane:IN, x:IN, y:IN)
    REAL x
    REAL y
    REAL z
-
+   
    z = 0.0;
    if NOT (plane.c == 0) then
       z = (-plane.a * x - plane.b * y - plane.d) / plane.c;
@@ -185,18 +349,18 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PLANES(plane1:IN, plane2:IN)
    DECL STR_PLANE plane1
    DECL STR_PLANE plane2
    DECL STR_LINE3D line3d
-
+   
    line3d.plane1 = plane1
    line3d.plane2 = plane2
-
+   
    line3d.point.x = 0
    line3d.point.y = +plane1.c * plane2.d / (plane1.b * plane2.c - plane1.c * plane2.b) - plane1.d * plane2.c / (plane1.b * plane2.c - plane1.c * plane2.b)
    line3d.point.z = -plane1.b * plane2.d / (plane1.b * plane2.c - plane1.c * plane2.b) + plane1.d * plane2.b / (plane1.b * plane2.c - plane1.c * plane2.b)
-
+   
    line3d.vec.l = 1
    line3d.vec.m = (-plane1.a * plane2.c + plane1.c * plane2.a) / (plane1.b * plane2.c - plane1.c * plane2.b)
    line3d.vec.n = (plane1.a * plane2.b - plane1.b * plane2.a) / (plane1.b * plane2.c - plane1.c * plane2.b)
-
+   
    return line3d
 ENDFCT
 
@@ -204,12 +368,12 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
    DECL E6POS point
    DECL STR_VECTOR3D vec
    DECL STR_LINE3D line3d
-
+   
    INT count
-
+   
    line3d.point = point
    line3d.vec = vec
-
+   
    count = 0
    if (NOT (vec.l == 0)) then
       count = count + 1
@@ -220,19 +384,19 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
    if (NOT (vec.n == 0)) then
       count = count + 1
    endif
-
+   
    if (count == 3) then
       line3d.plane1.a = -(vec.m / vec.l)
       line3d.plane1.b = 1 
       line3d.plane1.c = 0
       line3d.plane1.d = point.x * vec.m / vec.l - point.y
-
+      
       line3d.plane2.a = -(vec.n / vec.l)
       line3d.plane2.b = 0
       line3d.plane2.c = 1
       line3d.plane2.d = point.x * vec.n / vec.l - point.z
    endif
-
+   
    if (count == 2) then
       if (vec.l == 0.0) then
          line3d.plane1.a = 1
@@ -244,7 +408,7 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
          line3d.plane2.c = 1
          line3d.plane2.d = (vec.n * point.y) / vec.m
       endif
-     if (vec.m == 0.0) then
+      if (vec.m == 0.0) then
          line3d.plane1.a = 0
          line3d.plane1.b = 1
          line3d.plane1.c = 0
@@ -253,8 +417,8 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
          line3d.plane2.b = 0
          line3d.plane2.c = 1
          line3d.plane2.d = (vec.n * point.x) / vec.l
-     endif
-     if (vec.n == 0.0) then
+      endif
+      if (vec.n == 0.0) then
          line3d.plane1.a = 0
          line3d.plane1.b = 0
          line3d.plane1.c = 1
@@ -263,9 +427,9 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
          line3d.plane2.b = 1
          line3d.plane2.c = 0
          line3d.plane2.d = (vec.m * point.x) / vec.l
-     endif
+      endif
    endif
-
+   
    if (count == 1) then
       if (vec.l <> 0.0) then
          line3d.plane1.a = 0
@@ -298,7 +462,7 @@ global DEFFCT STR_LINE3D LINE3D_FROM_PARAMETRIC(point:IN, vec:IN)
          line3d.plane1.d = point.y
       endif
    endif
-
+   
    return line3d
 ENDFCT
 
@@ -306,7 +470,6 @@ global DEFFCT E6POS LINE3D_POINT_FROM_ORIGIN(line3d:IN, distance:IN)
    DECL STR_LINE3D line3d
    DECL REAL distance
    DECL E6POS point
-
    
    point.x = line3d.point.x + distance * line3d.vec.l
    point.y = line3d.point.y + distance * line3d.vec.m
@@ -346,10 +509,10 @@ global DEF LINE3D_yzGivenX(line3d:IN, x:IN, y:OUT, z:OUT)
    if ((line3d.plane1.b <> 0) AND (line3d.plane2.c <> 0) AND ((1.0 - line3d.plane2.b * line3d.plane1.c * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c)) <> 0)) then
       z = (line3d.plane2.b * line3d.plane1.a * x * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c) + line3d.plane2.b * line3d.plane1.d * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c) - line3d.plane2.a * x * (1.0 / line3d.plane2.c) - line3d.plane2.d * (1.0 / line3d.plane2.c)) / (1.0 - line3d.plane2.b * line3d.plane1.c * (1.0 / line3d.plane1.b) * (1.0 / line3d.plane2.c))
    endif
-
+   
    y = 0.0
    if (line3d.plane1.b <> 0.0) then
-     y = (-line3d.plane1.c * z - line3d.plane1.a * x - line3d.plane1.d) / line3d.plane1.b;
+      y = (-line3d.plane1.c * z - line3d.plane1.a * x - line3d.plane1.d) / line3d.plane1.b;
    endif
 END
 
@@ -363,7 +526,7 @@ global DEF LINE3D_xzGivenY(line3d:IN, x:OUT, y:IN, z:OUT)
    if ((line3d.plane1.a <> 0) AND (line3d.plane2.c <> 0) AND ((1.0 - line3d.plane2.a * line3d.plane1.c * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c)) <> 0)) then
       z = (line3d.plane2.a * line3d.plane1.b * y * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c) + line3d.plane2.a * line3d.plane1.d * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c) - line3d.plane2.b * y * (1.0 / line3d.plane2.c) - line3d.plane2.d * (1.0 / line3d.plane2.c)) / (1.0 - line3d.plane2.a * line3d.plane1.c * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.c))
    endif
-
+   
    x = 0.0
    if (line3d.plane1.a <> 0) then
       x = (-line3d.plane1.c * z - line3d.plane1.b * y - line3d.plane1.d) / line3d.plane1.a;
@@ -380,7 +543,7 @@ global DEF LINE3D_xyGivenZ(line3d:IN, x:OUT, y:OUT, z:IN)
    if ((line3d.plane1.a <> 0) AND (line3d.plane2.b <> 0) AND ((1.0 - line3d.plane2.a * line3d.plane1.b * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b)) <> 0)) then
       y = (line3d.plane2.a * line3d.plane1.c * z * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b) + line3d.plane2.a * line3d.plane1.d * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b) - line3d.plane2.c * z * (1.0 / line3d.plane2.b) - line3d.plane2.d * (1.0 / line3d.plane2.b)) / (1.0 - line3d.plane2.a * line3d.plane1.b * (1.0 / line3d.plane1.a) * (1.0 / line3d.plane2.b))
    endif
-
+   
    x = 0.0
    if (line3d.plane1.a <> 0) then
       x = (-line3d.plane1.b * y - line3d.plane1.c * z - line3d.plane1.d) / line3d.plane1.a;
