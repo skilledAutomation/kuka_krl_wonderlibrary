@@ -11,6 +11,74 @@ DEF geometrylib( )
    ;   For 2D and 3D primitives, the plane is X/Y
 END
 
+;performs the test on the library and returns an integer value
+; returns
+;  0: no error
+;  value: the test index 
+global DEFFCT INT geometrylib_test(tolerance:IN)
+   DECL REAL tolerance
+   INT test_index
+   E6POS p1, p2, p3
+   REAL value_real
+   DECL STR_LINE2D line2d, line2d_2
+   
+   test_index = 1
+   p1 = {x 0, y 0, z 0, a 10, b 10, c 10} ;creation of a point
+   p2 = p1:{x 1, y 0, z 0, a 0, b 0, c 0} ;traslating the point of 1.0
+   ;checking the distance in tolerance
+   if NOT IN_TOLERANCE(DISTANCE_POINT_POINT(p1, p2), 1.0, tolerance) then
+      goto ERROR
+   endif      
+   
+   test_index = test_index + 1 ;2
+   ;creating a 45.0 degree line passing through the cartesian origin
+   p1 = {x 0, y 0, z 0, a 0, b 0, c 0}
+   p2 = {x 1, y 1, z 0, a 0, b 0, c 0}
+   ; ^ 
+   ; |   /
+   ; |  /  <---line2d
+   ; | /
+   ;  0 ---->
+   ON_ERROR_PROCEED
+   line2d = LINE2D_FROM_2P(p1, p2)
+   if $ERR.NUMBER <> 0 then
+      goto ERROR
+   endif
+   
+   test_index = test_index + 1 ;3
+   if NOT IN_TOLERANCE(LINE2D_DIST_FROM_POINT(line2d, {x 1.0, y 0.0, z 0, a 0, b 0, c 0}), sqrt(2.0), tolerance) then
+      goto ERROR
+   endif
+   
+   test_index = test_index + 1 ;4
+   if NOT IN_TOLERANCE(LINE2D_Y_GIVEN_X(line2d, 0.5), sqrt(2.0), tolerance) then
+      goto ERROR
+   endif
+   
+   test_index = test_index + 1 ;5
+   if NOT IN_TOLERANCE(LINE2D_X_GIVEN_Y(line2d, 0.5), sqrt(2.0), tolerance) then
+      goto ERROR
+   endif
+   
+   test_index = test_index + 1 ;6
+   p1 = {x 0, y 1, z 0, a 0, b 0, c 0}
+   p2 = {x 1, y 0, z 0, a 0, b 0, c 0}
+   line2d_2 = LINE2D_FROM_2P(p1, p2)
+   p3 = LINE2D_INTERSECTION(line2d, line2d_2)
+   if NOT IN_TOLERANCE(p3.x, sqrt(2.0), tolerance) then
+      goto ERROR
+   endif
+   if NOT IN_TOLERANCE(p3.y, sqrt(2.0), tolerance) then
+      goto ERROR
+   endif
+   
+   ;next to be tested circumference
+   
+   return 0
+ERROR:
+   return test_index
+ENDFCT
+
 ;returns the 3D distance between two points
 global DEFFCT REAL DISTANCE_POINT_POINT(p1:IN, p2:IN)
    DECL E6POS p1

@@ -1,0 +1,27 @@
+&ACCESS RV
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF mathlib( )
+   ; Author:      Davide Rosa
+   ; e-mail:      dddomodossola@gmail.com
+   ; repository:  https://github.com/skilledAutomation/kuka_krl_wonderlibrary
+
+   ; DESCRIPTION:
+   ; This library provides a set of functions for math operations
+END
+
+;checks if a value is within a range, with limits comprised
+global DEFFCT BOOL IN_RANGE(value:IN, value_min:IN, value_max:IN)
+   DECL REAL value
+   DECL REAL value_min
+   DECL REAL value_max
+   RETURN ((value >= value_min) AND (value <= value_max))
+ENDFCT
+
+;checks if a value is near a value given a tolerance
+global DEFFCT BOOL IN_TOLERANCE(value:IN, value_ref:IN, tolerance:IN)
+   DECL REAL value
+   DECL REAL value_ref
+   DECL REAL tolerance
+   RETURN ((value >= (value_ref-tolerance/2.0)) AND (value <= (value_ref-tolerance/2.0)))
+ENDFCT
